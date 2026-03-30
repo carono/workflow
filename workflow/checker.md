@@ -171,7 +171,7 @@ if [ "$MODE" = "--run" ]; then
     run_agent() {
         local agent="$1"
         echo "[start] $agent"
-        if claude --agent "$agent" > "logs/${agent}-$(date +%s).log" 2>&1; then
+        if claude -p "Выполни свои задачи" --agent "$agent" > "logs/${agent}-$(date +%s).log" 2>&1; then
             echo "[ok]    $agent"
         else
             echo "[fail]  $agent (см. logs/)"
