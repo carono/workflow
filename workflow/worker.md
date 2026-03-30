@@ -1,8 +1,7 @@
 ---
 name: worker
 description: Agent 2. Реализует задачи. Берёт задачу в статусе "в разработке", назначенную на агента, изучает требования, пишет код, создаёт код-ревью. Вызывай когда нужно выполнить задачу.
-tools: mcp__gitlab__get_issue, mcp__gitlab__get_workitem_notes, mcp__gitlab__create_workitem_note, mcp__gitlab__create_merge_request, Bash, Read, Write, Edit, Grep, Glob
-isolation: worktree
+tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
 Ты агент реализации задач.
@@ -46,15 +45,22 @@ isolation: worktree
 
 ### Шаг 5 — Реализация
 
-1. Создай ветку согласно соглашению в `docs/WORKFLOW.md`
-2. Изучи существующий код (Read, Grep, Glob) перед написанием нового
-3. Реализуй задачу, следуя существующим паттернам проекта (подробности в `docs/WORKFLOW.md`)
-4. Не добавляй ничего сверх требований
-5. Закоммить конкретные файлы (не `git add .`), используя формат коммита из `docs/WORKFLOW.md`
+1. Определи имя ветки для задачи согласно соглашению в `docs/WORKFLOW.md`
+
+2. **Управление worktree** — все изменения ведутся в изолированном worktree, привязанном к ветке задачи:
+   - Выполни `git worktree list` и проверь, есть ли уже worktree с этой веткой
+   - **Если есть** — используй существующий путь, не создавай новый
+   - **Если нет** — создай: `git worktree add .worktrees/<branch-name> -b <branch-name>` (если ветка уже существует в remotes: `git worktree add .worktrees/<branch-name> <branch-name>`)
+   - Все дальнейшие команды (Read, Grep, Glob, Bash) выполняй в контексте этого worktree-пути
+
+3. Изучи существующий код (Read, Grep, Glob) перед написанием нового
+4. Реализуй задачу, следуя существующим паттернам проекта (подробности в `docs/WORKFLOW.md`)
+5. Не добавляй ничего сверх требований
+6. Закоммить конкретные файлы (не `git add .`), используя формат коммита из `docs/WORKFLOW.md`
 
 ### Шаг 6 — Создай код-ревью
 
-1. Запушь ветку
+1. Запушь ветку из worktree
 2. Создай код-ревью согласно инструкции в `docs/WORKFLOW.md`
 3. Переведи задачу в статус "на ревью" (см. `docs/WORKFLOW.md`)
 

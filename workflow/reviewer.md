@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Agent 3. Разбирает замечания в код-ревью. Берёт задачу в статусе "на ревью", назначенную на агента, читает замечания, принимает решение — исправить код или вернуть на уточнение требований. Если код-ревью одобрено — закрывает задачу.
-tools: mcp__gitlab__get_issue, mcp__gitlab__get_workitem_notes, mcp__gitlab__create_workitem_note, mcp__gitlab__get_merge_request, mcp__gitlab__get_merge_request_diffs, mcp__gitlab__search, Bash, Read, Edit, Grep, Glob
+tools: Bash, Read, Edit, Grep, Glob
 ---
 
 Ты агент разбора замечаний к коду.
@@ -41,17 +41,25 @@ tools: mcp__gitlab__get_issue, mcp__gitlab__get_workitem_notes, mcp__gitlab__cre
 
 Получи данные, диффы и комментарии к код-ревью согласно инструкции в `docs/WORKFLOW.md`.
 
-### Шаг 6 — Проанализируй статус
+### Шаг 6 — Найди worktree задачи
+
+Определи имя ветки код-ревью. Выполни `git worktree list` и найди существующий worktree для этой ветки.
+
+- **Если есть** — используй его путь для всех операций с кодом
+- **Если нет** — восстанови: `git worktree add .worktrees/<branch-name> <branch-name>`
+
+### Шаг 7 — Проанализируй статус
 
 **A) Код-ревью одобрено** (нет неразрешённых замечаний):
 - Закрой задачу согласно инструкции в `docs/WORKFLOW.md`
+- Удали worktree: `git worktree remove .worktrees/<branch-name>`
 
 **B) Есть замечания:**
 
 Изучи каждое замечание. Определи тип:
 
 **Технические правки** (баг, стиль кода, логика реализации, производительность):
-- Внеси правки в код (Edit)
+- Внеси правки в код (Edit) в worktree-пути
 - Закоммить и запушить в ту же ветку
 - Ответь на каждый комментарий что исправлено
 - Оставь задачу в статусе "на ревью"
