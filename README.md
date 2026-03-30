@@ -1,0 +1,1 @@
+npx degit carono/workflow .claude/agents/carono

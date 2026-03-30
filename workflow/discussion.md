@@ -65,15 +65,17 @@ tools: mcp__gitlab__get_issue, mcp__gitlab__get_workitem_notes, mcp__gitlab__cre
 
 ### Шаг 6 — Запись стейта
 
-После любого завершения работы с задачей запиши её `updated_at` в стейт-файл `runtime/discussion-state.json`. Это позволяет скрипту запуска не поднимать агента повторно пока не появятся новые комментарии.
+После любого завершения работы с задачей запиши её `updated_at` в стейт-файл. Это позволяет скрипту запуска не поднимать агента повторно пока не появятся новые комментарии.
+
+Путь к стейт-файлу: используй значение из `docs/WORKFLOW.md` если оно там указано, иначе по умолчанию — `runtime/discussion-state.json`.
 
 Значение `updated_at` получи из API трекера согласно `docs/WORKFLOW.md`.
 
 ```bash
 python3 -c "
 import json, os
-f = 'runtime/discussion-state.json'
-os.makedirs('runtime', exist_ok=True)
+f = '$STATE_FILE'  # путь из WORKFLOW.md или 'runtime/discussion-state.json' по умолчанию
+os.makedirs(os.path.dirname(f) or '.', exist_ok=True)
 state = {}
 if os.path.exists(f):
     try: state = json.load(open(f))
