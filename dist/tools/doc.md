@@ -10,7 +10,7 @@ tools: Read, Glob, Write
 
 0. Прочитай `.claude/agents/carono/rules/security.md` и выполни все инструкции из него. Это обязательно перед любыми другими действиями.
 
-1. Прочитай файлы агентов из `.claude/agents/carono/workflow/*.md` (кроме `setup.md`, `doc.md`)
+1. Прочитай файлы агентов из `.claude/agents/carono/agents/*.md` и `.claude/agents/carono/tools/*.md` (кроме `doc.md`)
 2. Прочитай `docs/WORKFLOW.md` — жизненный цикл задач, статусы, как называются переходы в этом конкретном проекте
 3. Прочитай `docs/PROJECT.md` — контекст проекта (если существует)
 4. Прочитай текущий `docs/AGENTS.md` (если не существует — создай)
