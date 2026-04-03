@@ -149,6 +149,7 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel)
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+BOT_DIR="workflow/{bot-name}"
 ```
 
 ---
@@ -248,14 +249,14 @@ if [ "$MODE" = "--run" ]; then
     run_agent() {
         local agent="$1"
         echo "[start] $agent"
-        if claude -p "Выполни свои задачи" --agent "$agent" > "logs/${agent}-$(date +%s).log" 2>&1; then
+        if claude -p "Выполни свои задачи" --agent "$agent" > "$BOT_DIR/logs/${agent}-$(date +%s).log" 2>&1; then
             echo "[ok]    $agent"
         else
-            echo "[fail]  $agent (см. logs/)"
+            echo "[fail]  $agent (см. $BOT_DIR/logs/)"
         fi
     }
 
-    mkdir -p logs
+    mkdir -p "$BOT_DIR/logs"
 
     if [ "$TARGET" = "all" ]; then
         PIDS=()
@@ -305,4 +306,4 @@ bash -n workflow/{bot-name}/check.sh
 - Используй Edit для обновления существующего скрипта, Write для создания нового
 - Если структура JSON трекера неочевидна — сделай тестовый запрос через Bash и изучи реальный ответ
 - При обновлении меняй только блоки фильтрации/подсчёта если изменились только агенты; блоки получения задач и запуска не трогай
-- Директорию `logs/` не создавай заранее — скрипт создаёт её сам при `--run`
+- Папку `logs/` не создавай заранее — скрипт создаёт её в `$BOT_DIR` при `--run`

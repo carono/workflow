@@ -6,3 +6,4 @@ src/logs/
 .claude/worktrees/
 workflow/**/.env
 workflow/**/discussion-state.json
+workflow/**/logs/
