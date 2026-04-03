@@ -2,8 +2,9 @@
 """Build dist/<platform>/ from src/.
 
 For each platform (claude-code, opencode):
-  1. Converts src/agents/*.md and src/tools/*.md via format.py
-  2. Copies src/rules/ and src/templates/ into dist/<platform>/
+  1. Reads rules/ and templates/ as inline content
+  2. Substitutes template variables in agents/tools (e.g. {{RULES_SECURITY}})
+  3. Converts src/agents/*.md and src/tools/*.md via format.py
 
 Usage:
     python build.py              # build all platforms
@@ -13,6 +14,7 @@ Usage:
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -26,6 +28,33 @@ FORMAT_SCRIPT = os.path.join(SCRIPT_DIR, "format.py")
 ALL_PLATFORMS = ["claude-code", "opencode"]
 
 
+def load_template_variables() -> dict:
+    """Read rules and templates files and return as template variables."""
+    variables = {}
+
+    # rules/security.md
+    sec_path = os.path.join(SRC, "rules", "security.md")
+    if os.path.isfile(sec_path):
+        with open(sec_path, encoding="utf-8") as f:
+            variables["{{RULES_SECURITY}}"] = f.read()
+
+    # templates/
+    for tpl_name in ("WORKFLOW", "PROJECT", "TECH", "BOT"):
+        tpl_path = os.path.join(SRC, "templates", f"{tpl_name}.md")
+        if os.path.isfile(tpl_path):
+            with open(tpl_path, encoding="utf-8") as f:
+                variables[f"{{{{TEMPLATE_{tpl_name}}}}}"] = f.read()
+
+    return variables
+
+
+def substitute_variables(content: str, variables: dict) -> str:
+    """Replace all {{VAR}} placeholders with their content."""
+    for placeholder, value in variables.items():
+        content = content.replace(placeholder, value)
+    return content
+
+
 def clean_platform_dir(platform: str):
     """Remove dist/<platform>/ if it exists."""
     path = os.path.join(DIST, platform)
@@ -33,38 +62,36 @@ def clean_platform_dir(platform: str):
         shutil.rmtree(path)
 
 
-def copy_dir(src_dir: str, dst_dir: str) -> int:
-    """Copy all files from src_dir to dst_dir. Returns count."""
-    if not os.path.isdir(src_dir):
-        print(f"  SKIP: {src_dir} not found")
-        return 0
+def run_format(input_path: str, platform: str, output_path: str, variables: dict) -> bool:
+    """Run format.py to convert a Markdown file to a platform format.
 
-    os.makedirs(dst_dir, exist_ok=True)
-    count = 0
-    for fname in sorted(os.listdir(src_dir)):
-        src_path = os.path.join(src_dir, fname)
-        if os.path.isfile(src_path):
-            dst_path = os.path.join(dst_dir, fname)
-            shutil.copy2(src_path, dst_path)
-            rel_in = os.path.relpath(src_path, ROOT)
-            rel_out = os.path.relpath(dst_path, ROOT)
-            print(f"  {rel_in} -> {rel_out}")
-            count += 1
-    return count
+    Before passing to format.py, substitute template variables in the input file
+    by writing a temporary file with resolved content.
+    """
+    # Read input, substitute variables
+    with open(input_path, encoding="utf-8") as f:
+        content = f.read()
+    content = substitute_variables(content, variables)
 
+    # Write to a temp file for format.py to consume
+    tmp_path = input_path + ".tmp.resolved"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        f.write(content)
 
-def run_format(input_path: str, platform: str, output_path: str) -> bool:
-    """Run format.py to convert a Markdown file to a platform format."""
     ext = ".md"
     style = "markdown"
 
     cmd = [
         sys.executable, FORMAT_SCRIPT,
-        input_path, platform,
+        tmp_path, platform,
         "--style", style,
         "--output", output_path,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
+
+    # Clean up temp file
+    os.remove(tmp_path)
+
     if result.returncode != 0:
         print(f"  ERROR: {result.stderr.strip()}", file=sys.stderr)
         return False
@@ -80,7 +107,10 @@ def build_platform(platform: str) -> int:
     base = os.path.join(DIST, platform)
     total = 0
 
-    # Step 1: Convert agents and tools via format.py
+    # Load template variables once per platform
+    variables = load_template_variables()
+
+    # Convert agents and tools via format.py with variable substitution
     agents_src = os.path.join(SRC, "agents")
     agents_dst = os.path.join(base, "agents")
     if os.path.isdir(agents_src):
@@ -91,6 +121,7 @@ def build_platform(platform: str) -> int:
                     os.path.join(agents_src, fname),
                     platform,
                     os.path.join(agents_dst, fname),
+                    variables,
                 ):
                     total += 1
 
@@ -104,12 +135,9 @@ def build_platform(platform: str) -> int:
                     os.path.join(tools_src, fname),
                     platform,
                     os.path.join(tools_dst, fname),
+                    variables,
                 ):
                     total += 1
-
-    # Step 2: Copy rules and templates
-    total += copy_dir(os.path.join(SRC, "rules"), os.path.join(base, "rules"))
-    total += copy_dir(os.path.join(SRC, "templates"), os.path.join(base, "templates"))
 
     return total
 
