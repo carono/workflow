@@ -4,3 +4,4 @@ src/logs/
 .claude/settings.local.json
 /.mcp.json
 .claude/worktrees/
+workflow/**/.env
