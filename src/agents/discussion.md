@@ -86,14 +86,14 @@ ls -d workflow/*/ 2>/dev/null
 
 После любого завершения работы с задачей запиши её `updated_at` в стейт-файл. Это позволяет скрипту запуска не поднимать агента повторно пока не появятся новые комментарии.
 
-Путь к стейт-файлу: используй значение из `workflow/{bot-name}/WORKFLOW.md` если оно там указано, иначе по умолчанию — `runtime/discussion-state.json`.
+Путь к стейт-файлу: используй значение из `workflow/{bot-name}/WORKFLOW.md` если оно там указано, иначе по умолчанию — `workflow/{bot-name}/discussion-state.json`.
 
 Значение `updated_at` получи из API трекера согласно `workflow/{bot-name}/WORKFLOW.md`.
 
 ```bash
 python3 -c "
 import json, os
-f = '$STATE_FILE'  # путь из WORKFLOW.md или 'runtime/discussion-state.json' по умолчанию
+f = '$STATE_FILE'  # путь из WORKFLOW.md или 'workflow/{bot-name}/discussion-state.json' по умолчанию
 os.makedirs(os.path.dirname(f) or '.', exist_ok=True)
 state = {}
 if os.path.exists(f):

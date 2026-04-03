@@ -5,3 +5,4 @@ src/logs/
 /.mcp.json
 .claude/worktrees/
 workflow/**/.env
+workflow/**/discussion-state.json
