@@ -159,6 +159,13 @@ fi
 
 verbose_log "Получено задач (JSON длина): ${#ISSUES_JSON}"
 
+# Сохраняем JSON во временный файл — прямая интерполяция '''$ISSUES_JSON'''
+# ломается если в данных есть одинарные кавычки (названия задач и т.п.)
+ISSUES_TMP=$(mktemp)
+trap "rm -f '$ISSUES_TMP'" EXIT
+printf '%s' "$ISSUES_JSON" > "$ISSUES_TMP"
+verbose_log "JSON сохранён во временный файл: $ISSUES_TMP"
+
 # ─── Блок 2: Подсчёт задач по каждому агенту ───────────────────────────────────
 
 verbose_log "Определяем ID пользователя Carono AI..."
@@ -183,8 +190,8 @@ verbose_log "AI_USER_ID: $AI_USER_ID"
 
 verbose_log "Подсчёт задач для discussion..."
 COUNT_DISCUSSION=$(python3 -c "
-import json
-issues = json.loads('''$ISSUES_JSON''')
+import json, sys
+issues = json.load(open('$ISSUES_TMP'))
 ai_user = '$AI_USER_ID'
 verbose = $( [ "$VERBOSE" = true ] && echo "True" || echo "False" )
 # Обсуждение: задачи в колонке 'Обсуждение', неназначенные ИЛИ назначенные на AI
@@ -207,7 +214,7 @@ verbose_log "COUNT_DISCUSSION: $COUNT_DISCUSSION"
 verbose_log "Подсчёт задач для worker..."
 COUNT_WORKER=$(python3 -c "
 import json, sys
-issues = json.loads('''$ISSUES_JSON''')
+issues = json.load(open('$ISSUES_TMP'))
 ai_user = '$AI_USER_ID'
 verbose = $( [ "$VERBOSE" = true ] && echo "True" || echo "False" )
 # Разработка: задачи в колонке 'Разработка', назначенные на AI
@@ -228,7 +235,7 @@ verbose_log "COUNT_WORKER: $COUNT_WORKER"
 # Reviewer: колонка «на ревью» может не существовать — проверяем
 HAS_REVIEW_COLUMN=$(python3 -c "
 import json
-issues = json.loads('''$ISSUES_JSON''')
+issues = json.load(open('$ISSUES_TMP'))
 print('yes' if any(i.get('_column') == 'на ревью' for i in issues) else 'no')
 ")
 
@@ -238,7 +245,7 @@ if [ "$HAS_REVIEW_COLUMN" = "yes" ]; then
     verbose_log "Подсчёт задач для reviewer..."
     COUNT_REVIEWER=$(python3 -c "
 import json, sys
-issues = json.loads('''$ISSUES_JSON''')
+issues = json.load(open('$ISSUES_TMP'))
 ai_user = '$AI_USER_ID'
 verbose = $( [ "$VERBOSE" = true ] && echo "True" || echo "False" )
 count = sum(

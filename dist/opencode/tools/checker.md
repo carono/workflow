@@ -162,10 +162,17 @@ BOT_DIR="workflow/{bot-name}"
 **Блок 2: Получение задач**
 
 Сформируй команду получения задач из трекера на основе `workflow/{bot-name}/WORKFLOW.md`.
-Результат — переменная `ISSUES_JSON`, JSON-массив задач.
+Результат — переменная `ISSUES_JSON`, JSON-массив задач. После получения сохрани его во
+временный файл — прямая интерполяция `'''$ISSUES_JSON'''` ломается, если в данных есть
+одинарные кавычки (названия задач, комментарии и т.п.).
 
 ```bash
 ISSUES_JSON=$(# команда из WORKFLOW.md)
+
+# Сохраняем JSON во временный файл
+ISSUES_TMP=$(mktemp)
+trap "rm -f '$ISSUES_TMP'" EXIT
+printf '%s' "$ISSUES_JSON" > "$ISSUES_TMP"
 ```
 
 Если трекер возвращает не JSON — конвертируй через python3 или jq.
@@ -180,7 +187,7 @@ ISSUES_JSON=$(# команда из WORKFLOW.md)
 ```bash
 COUNT_<АГЕНТ>=$(python3 -c "
 import json
-issues = json.loads('''$ISSUES_JSON''')
+issues = json.load(open('$ISSUES_TMP'))
 print(sum(1 for i in issues if <условие фильтрации>))
 ")
 
@@ -191,7 +198,7 @@ state = {}
 if os.path.exists('<путь к стейт-файлу>'):
     try: state = json.load(open('<путь к стейт-файлу>'))
     except Exception: pass
-issues = json.loads('''$ISSUES_JSON''')
+issues = json.load(open('$ISSUES_TMP'))
 filtered = [i for i in issues if <условие фильтрации>]
 print(sum(
     1 for i in filtered
