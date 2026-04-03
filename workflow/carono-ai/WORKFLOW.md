@@ -191,7 +191,10 @@ GET https://yougile.com/api-v2/users?limit=20&offset=0
 ### Ветки
 
 - Создавать от: `master`
-- Формат имени: *(уточнить)*
+- Формат имени: `task/<номер>-<краткое-описание>`, где:
+  - номер — локальный WF-номер (например WF-18 → 18)
+  - описание — на английском, kebab-case
+  - Пример: `task/18-fix-worker-worktrees`
 - Целевая ветка для код-ревью: `master`
 
 ### Создание код-ревью
@@ -207,5 +210,25 @@ GET https://yougile.com/api-v2/users?limit=20&offset=0
 ### Формат коммита
 
 В сообщении коммита обязательно:
-1. **Полная ссылка на задачу** в YouGile
+1. **Полная ссылка на задачи** в YouGile
 2. Человекопонятное описание того, что было сделано
+
+### Предварительные проверки
+
+Перед началом работы агент worker должен проверить:
+
+1. **gh CLI установлен:** `which gh` — если не установлен, установить согласно инструкции ниже
+2. **GitHub токен доступен:** переменная `GITHUB_TOKEN` или `GITHUB_API_TOKEN` должна быть установлена
+3. **Авторизация в gh:** `gh auth status` — проверить что есть доступ к репозиторию `carono/workflow`
+
+#### Установка gh CLI (Ubuntu/Debian)
+
+```bash
+curl -sL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update && sudo apt install -y gh
+```
+
+#### Настройка токена
+
+Токен должен быть установлен в переменной окружения `GITHUB_TOKEN` или `GITHUB_API_TOKEN`. Если токена нет — запросить у пользователя.
